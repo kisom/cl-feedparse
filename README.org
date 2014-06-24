@@ -1,14 +1,135 @@
 * Feedparse  - Utility for parsing Atom and RSS feeds.
 
+Feedparse provides support for fetching and parsing RSS and Atom
+feeds.
+
+*NOTE*: this package is still under development, and isn't fully
+functional. Particularly, only parsing some RSS feeds is currently
+supported.
+
 ** Usage
+
+   There are two main functions in the package:
+    
+   + ~parse-feed~ takes a URL and fetches the feed from this location. This
+     is couples an HTTP request with parse-feed-string.
+   + ~parse-feed-string~ takes a string or array of chars and parses the
+     feed in it.
+
+*** The ~feed~ object
+    
+    Both functions return an instance of the ~feed~ object. This
+    object has slots
+     
+    + title :: contains a string storing the feed's title
+    + kind :: contains either a keyword containing the type of feed
+              (currently, either :rss or :atom)
+    + link :: contains a string with a URL pointing to the feed source, as
+              reported by the feed. This means that even if the feed is
+              parsed from a string, it still probably has a link as long
+              as the feed contains a link.
+    + items :: contains a list of feed-items.
+     
+    The ~describe-object~ method has been overloaded to provide a
+    useful description for a feed:
+     
+    #+BEGIN_EXAMPLE
+    CL-USER> (describe
+              (feedparse:parse-feed-string "http://kyleisom.net/feed.xml"))
+    kyleisom.net (RSS feed)
+    Link: http://kyleisom.net
+    Item count: 10
+      Entry: Designing a key server in Go
+      Entry: On Hardware RNGs, FreeBSD, and FUD
+      Entry: Bit-Reversal Permutations
+      Entry: Introduction to Patching Binaries with the HT Editor
+      Entry: Elliptic Curve Patents
+      Entry: Post-Defcon Notes
+      Entry: Securing Communications Between Peers
+      Entry: OpenSSH keys: A Walk-Through
+      Entry: "You've got Leanpub royalties!"
+      Entry: Daemonising Go Programs
+    #+END_EXAMPLE
+
+*** The ~feed-item~ object
+
+    Feed items are stored as instances of the ~feed-item~ object. This
+    has the slots
+
+    + title :: is a string containing the title of the entry.
+    + date :: is a string containing the published date of the entry.
+    + link :: is string containing the link to the entry.
+    + body :: is a string containing the body of the entry. No HTML
+              parsing is done on the body.
+
+    Like the feed object, the ~describe-object~ method has been
+    overloaded:
+
+    #+BEGIN_EXAMPLE
+    CL-USER> (describe
+              (first
+               (feedparse:feed-items
+                (feedparse:parse-feed "http://kyleisom.net/feed.xml"))))
+    Entry: Designing a key server in Go (published Thu, 23 Jan 2014 04:00:00 -0800)
+    Link: http://kyleisom.net/blog/2014/01/23/building-a-key-server
+    Description:
+    NIL
+    #+END_EXAMPLE
+
+    This feed doesn't have a description, so the body is returned as ~nil~.
 
 ** Dependencies
 
+   feedparse makes uses of the following packages, all available via
+   Quicklisp:
+    
+   + s-xml :: used for parsing the feed XML
+   + flexi-streams :: used to convert byte arrays to strings
+   + drakma :: used to fetch feeds via HTTP
+
 ** Installation
+
+   Installation is best done using Quicklisp's local-projects
+   facility. Assuming Quicklisp is installed in /~/quicklisp/,
+   this can be done in a shell with:
+    
+   #+BEGIN_EXAMPLE
+   $ cd ~/quicklisp/local-projects
+   $ git clone https://github.com/kisom/cl-feedparse.git
+   #+END_EXAMPLE
+    
+   Now, feedparse can be loaded from SBCL:
+    
+   #+BEGIN_EXAMPLE
+   CL-USER> (ql:quickload :feedparse)
+   To load "feedparse":
+     Load 1 ASDF system:
+       feedparse
+   ; Loading "feedparse"
+   ..................................................
+   [package feedparse].
+   (:FEEDPARSE)
+   CL-USER> (describe
+             (feedparse:parse-feed-string "http://kyleisom.net/feed.xml"))
+   kyleisom.net (RSS feed)
+   Link: http://kyleisom.net
+   Item count: 10
+     Entry: Designing a key server in Go
+     Entry: On Hardware RNGs, FreeBSD, and FUD
+     Entry: Bit-Reversal Permutations
+     Entry: Introduction to Patching Binaries with the HT Editor
+     Entry: Elliptic Curve Patents
+     Entry: Post-Defcon Notes
+     Entry: Securing Communications Between Peers
+     Entry: OpenSSH keys: A Walk-Through
+     Entry: "You've got Leanpub royalties!"
+     Entry: Daemonising Go Programs
+   #+END_EXAMPLE
 
 ** Author
 
 + K. Isom (kyle@tyrfingr.is)
++ URL: http://kyleisom.net/
 
 * Copyright
 
@@ -16,4 +137,46 @@ Copyright (c) 2014 K. Isom (kyle@tyrfingr.is)
 
 * License
 
-Licensed under the ISC License.
+  Licensed under the ISC License.
+
+#+BEGIN_EXAMPLE
+Copyright (c) 2014 Kyle Isom <kyle@tyrfingr.is>
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above 
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. 
+#+END_EXAMPLE
+* Motivation
+
+  This project arose from a need to parse feeds while working through
+  the book "/Programming/Collective Intelligence/". I noticed there
+  was an RSS package, but nothing to parse Atom feeds.
+
+  This project is also my first attempt at writing Common Lisp code
+  meant for distribution. I've written a couple of other packages for
+  my own personal use, but nothing I ever intended to make available
+  to others.
+  
+* Development TODO list
+
+** TODO [0/5] Parse Atom feeds
+*** TODO Extract title
+*** TODO Extract publish date
+*** TODO Extract link
+*** TODO Extract description
+*** TODO Generalise XML element extraction
+** TODO [0/5] Add tests
+*** TODO Add known-good RSS feed as string (to skip HTML fetching)
+*** TODO Add known-good Atom feed as string (to skip HTML fetching)
+*** TODO Add a bad feed
+*** TODO Fetch a known-good RSS feed via HTTP
+*** TODO Fetch a known-good Atom feed via http
+
