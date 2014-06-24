@@ -58,6 +58,10 @@
   (let ((feed-xml (fetch-feed url)))
     (parser-dispatch feed-xml)))
 
+(defun parse-feed-string (s)
+  (parser-dispatch
+   (s-xml:parse-xml-string s)))
+
 (defun fetch-feed (url)
   (let ((body (drakma:http-request url)))
     (s-xml:parse-xml-string
