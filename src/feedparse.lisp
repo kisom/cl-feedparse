@@ -81,8 +81,7 @@
 (defun parse-feed (url)
   "Fetch the feed described in URL over HTTP, and parse the
 feed. Returns a feed object."
-  (let ((feed-xml (fetch-feed url)))
-    (parser-dispatch feed-xml)))
+  (parse-feed-string (drakma:http-request url)))
 
 (defun parse-feed-string (str)
   "Parse the feed stored in the string or array of octets, returning a
@@ -93,9 +92,6 @@ feed object."
       ((stringp str) str)
       ((byte-string-p str) (flexi-streams:octets-to-string str))
       (:else (error "Unknown content-type."))))))
-
-(defun fetch-feed (url)
-  (parse-feed-string (drakma:http-request url)))
 
 (defun get-xml-element (element item)
   (second (assoc element item)))
