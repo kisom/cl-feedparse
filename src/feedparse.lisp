@@ -1,5 +1,5 @@
 ;;;
-;;;  This file is a part of feedparse project.
+;;;  This file is a part of the feedparse project.
 ;;;  Copyright (c) 2014 K. Isom (kyle@tyrfingr.is)
 ;;;
 
@@ -26,8 +26,7 @@
 ;;; A predicate that returns true if the string is a byte string.
 (defun byte-string-p (str)
   (and (arrayp str)
-       (or (standard-char-p (elt str 0))
-           (characterp (elt str 0)))))
+       (every #'integerp str)))
 
 ;;; A feed contains a title, a kind (either `:RSS` or `:ATOM`), a
 ;;; string containing the link to the feed's source, and a list of
@@ -113,6 +112,25 @@ feed object."
       ((stringp str) str)
       ((byte-string-p str) (flexi-streams:octets-to-string str))
       (:else (error "Unknown content-type."))))))
+
+;;; Just give me the XML. This is useful in SLiME to understand the
+;;; structure of the data.
+(defun parse-xml (str)
+  (s-xml:parse-xml-string
+   (cond
+     ((stringp str) str)
+     ((byte-string-p str) (flexi-streams:octets-to-string str))
+     (:else (error "Unknown content-type.")))))
+
+;;; Let's take a look-see at this here XML. Or whatever.
+(defun pretty-print-xml (url)
+  (let ((str (drakma:http-request url)))
+    (pprint
+     (s-xml:parse-xml-string
+      (cond
+        ((stringp str) str)
+        ((byte-string-p str) (flexi-streams:octets-to-string str))
+        (:else (error "Unknown content-type.")))))))
 
 (defun get-xml-element (element item)
   (second (assoc element item)))
