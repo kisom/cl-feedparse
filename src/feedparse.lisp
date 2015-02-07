@@ -179,10 +179,7 @@ feed object."
        (equalp (first elt) ,target))))
 
 (head-is-x head-is-linkp :|link|)
-
-(defun is-linkp)
-
-(every-x-is-eltp head-is-linkp  :|link|)
+; (every-x-is-eltp head-is-linkp  :|link|)
 
 (defmacro defmatch-atom-elt (fn pred)
   `(defun ,fn (elt)
