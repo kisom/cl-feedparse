@@ -169,27 +169,63 @@ feed object."
 (defun atom-entry-p (elt)
   (equalp (first elt) :|entry|))
 
+(defun get-atom-body (entry)
+  (let ((summary (get-xml-element :|summary| entry)))
+    (if (null summary) "" summary)))
+
+(defmacro head-is-x (fn target)
+  `(defun ,fn (elt)
+     (when () (listp elt)
+       (equalp (first elt) ,target))))
+
+(head-is-x head-is-linkp :|link|)
+
+(defun is-linkp)
+
+(every-x-is-eltp head-is-linkp  :|link|)
+
+(defmacro defmatch-atom-elt (fn pred)
+  `(defun ,fn (elt)
+     (and (listp elt)
+          (listp (first elt))
+          (every ,pred elt))))
+(defmatch-atom-elt match-atom-link #'head-is-linkp)
+
+(defun extract-atom-entry-title (entry)
+  (labels ((title-candidatep (elt)
+             (when (and (listp elt)
+                        (listp (first elt)))
+               (first elt)))
+           (titlep (elt)
+             (equalp :|title| (first (first elt)))))
+    (let ((candidates (remove-if-not #'title-candidatep entry)))
+      (second (first (remove-if-not #'titlep candidates))))))
+
+(defun get-atom-title (entry)
+  (let ((title (get-xml-element :|title| entry)))
+    (if (null title)
+        (extract-atom-entry-title entry)
+        title)))
+
 (defun build-atom-entry (entry)
-  (let ((body (rest entry)))
-    (make-feed-item (get-xml-element :|title|     body)
+  (let* ((body (rest entry)))
+    (make-feed-item (get-atom-title body) 
                     (get-xml-element :|published| body)
                     (get-xml-element :|link|      body)
                     (get-xml-element :|summary|   body))))
 
-;;; this is a horrifying hack. really need to find a more elegant way
-;;; to do this!
-(defun match-atom-title (elt)
-  (and (listp elt)
-       (listp (first elt))
-       (equalp :|link| (first (first elt)))))
+(defun extract-first-link (feed-xml)
+  (let ((pos (position-if #'match-atom-link feed-xml)))
+    (unless (null pos)
+      (getf
+       (rest (first (nth pos feed-xml)))
+       :|href|))))
 
 (defun parse-atom (feed-xml)
   (make-instance 'feed
                  :title (get-xml-element :|title| feed-xml)
                  :kind :atom
-                 :link (third ; may cthulhu have mercy on my soul
-                        (caar
-                         (remove-if-not #'match-atom-title feed-xml)))
+                 :link (extract-first-link feed-xml)
                  :items (mapcar #'build-atom-entry
                                 (remove-if-not #'atom-entry-p
                                                (cdr feed-xml)))))
